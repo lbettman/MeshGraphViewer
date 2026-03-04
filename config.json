@@ -4,7 +4,12 @@
     {"name": "Disconnect", "command": "disconnect_nodes '%selected_nodes%'"},
     {"name": "Remove", "command": "remove '%selected_nodes%' '%selected_links%'"},
     {"name": "New Node", "command": "add_node"},
-    {"name": "Info", "command": "get_node_info '%selected_nodes%'"}
+    {"name": "Info", "command": "get_node_info '%selected_nodes%'"},
+    
+    {"name": "Load Small Graph", "command": "small"},
+    {"name": "Load Large Graph", "command": "large"},
+    {"name": "Clear Highlight", "command": "clear"},
+    {"name": "BFS 1→25", "command": "bfs 1 25"}
   ],
   "show_edit_json_row": true
 }

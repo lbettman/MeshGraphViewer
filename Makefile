@@ -1,5 +1,5 @@
 CFLAGS ?= -O2
-CFLAGS += -std=gnu99 -Wall -Werror -pedantic -fno-strict-aliasing -Wwrite-strings
+CFLAGS += -std=gnu99 -Wall -pedantic -fno-strict-aliasing -Wwrite-strings
 LDFLAGS += -lmicrohttpd
 SRC = src/files.c src/utils.c src/webserver.c src/call.c src/main.c
 

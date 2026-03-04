@@ -1,0 +1,7 @@
+{
+  "name": "MeshGraphViewer (Ubuntu)",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  "features": {},
+  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y make gcc libmicrohttpd-dev xxd python3 && make",
+  "forwardPorts": [8000]
+}

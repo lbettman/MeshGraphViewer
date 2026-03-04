@@ -25,8 +25,11 @@ uint8_t *read_file(size_t *size, const char path[])
   fseek(fp, 0, SEEK_SET);
 
   uint8_t *fdata = malloc(fsize);
-  if (fread(fdata, fsize, 1, fp) < 0) {
-    fprintf(stderr, "fread() %s / %s\n", strerror(errno), path);
+  size_t nread = fread(fdata, 1, fsize, fp);
+  if (nread != (size_t)fsize) {
+    fclose(fp);
+    free(fdata);
+    return NULL;
   }
   fclose(fp);
 
@@ -255,7 +258,8 @@ static int _execute_ret(char* msg, int msg_len, const char *cmd)
   }
 
   if (msg && msg_len > 0) {
-    fread(msg, msg_len - 1, 1, fp);
+    size_t got = fread(msg, 1, msg_len - 1, fp);
+    msg[got] = '\0';
   }
 
   rc = pclose(fp);
