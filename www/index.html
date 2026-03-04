@@ -339,24 +339,103 @@
         }
     }
 
-  document.getElementById("bfs-run").addEventListener("click", async () => {
-    const s = document.getElementById("bfs-start").value.trim();
-    const t = document.getElementById("bfs-end").value.trim();
-    if (!s || !t) return;
+// ---- BFS input panel wiring ----
 
-    // Send a command to the backend: "bfs <start> <end>"
-    // This relies on MeshGraphViewer's command endpoint used by buttons.
-    // We'll just reuse the same mechanism by calling the command API.
+// Try to use an existing function (many apps already have one for the buttons),
+// otherwise fallback to POSTing to a backend endpoint.
+async function sendMeshCommand(commandText) {
+  // 1) If the viewer page already has a command-sending function, use it.
+  // These names are guesses; we try a few common ones.
+  const candidates = [
+    window.send_command,
+    window.sendCommand,
+    window.execute_command,
+    window.execCommand,
+    window.run_command,
+    window.runCommand,
+  ].filter(fn => typeof fn === "function");
+
+  if (candidates.length > 0) {
+    // Use the first one we find.
+    return await candidates[0](commandText);
+  }
+
+  // 2) Fallback: try common endpoints.
+  const endpoints = ["/cmd", "/command", "/run", "/api/cmd", "/api/command"];
+
+  let lastErr = null;
+  for (const url of endpoints) {
     try {
-      await fetch("/cmd", {
+      const resp = await fetch(url, {
         method: "POST",
-        headers: {"Content-Type": "text/plain"},
-        body: `bfs ${s} ${t}`
+        headers: { "Content-Type": "text/plain" },
+        body: commandText
       });
+      if (resp.ok) return true;
+      lastErr = new Error(`${url} -> HTTP ${resp.status}`);
     } catch (e) {
-      console.error("BFS command failed", e);
+      lastErr = e;
     }
+  }
+  throw lastErr || new Error("No command endpoint worked");
+}
+
+function setStatus(msg) {
+  const el = document.getElementById("bfs-status");
+  if (el) el.textContent = msg || "";
+}
+
+function getVal(id) {
+  const el = document.getElementById(id);
+  return el ? el.value.trim() : "";
+}
+
+async function runBfsFromInputs() {
+  const s = getVal("bfs-start");
+  const t = getVal("bfs-end");
+  if (!s || !t) {
+    setStatus("enter start + end");
+    return;
+  }
+
+  setStatus("running…");
+  try {
+    await sendMeshCommand(`bfs ${s} ${t}`);
+    setStatus(`highlighted ${s}→${t}`);
+  } catch (e) {
+    console.error(e);
+    setStatus("failed (see console)");
+  }
+}
+
+async function clearHighlight() {
+  setStatus("clearing…");
+  try {
+    await sendMeshCommand("clear");
+    setStatus("cleared");
+  } catch (e) {
+    console.error(e);
+    setStatus("failed (see console)");
+  }
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+  const runBtn = document.getElementById("bfs-run");
+  const clearBtn = document.getElementById("bfs-clear");
+
+  if (runBtn) runBtn.addEventListener("click", runBfsFromInputs);
+  if (clearBtn) clearBtn.addEventListener("click", clearHighlight);
+
+  // Enter key triggers Run BFS
+  const startEl = document.getElementById("bfs-start");
+  const endEl = document.getElementById("bfs-end");
+  [startEl, endEl].forEach(el => {
+    if (!el) return;
+    el.addEventListener("keydown", (ev) => {
+      if (ev.key === "Enter") runBfsFromInputs();
+    });
   });
+});
 </script>
 
 
@@ -372,15 +451,38 @@
         </div>
     </div>
 
-    <div id="bfs-panel" style="position:fixed; top:12px; right:12px; z-index:9999; background:#222; color:#fff; padding:10px; border-radius:8px; font-family:sans-serif;">
-  <div style="font-weight:600; margin-bottom:6px;">BFS Path</div>
-  <div style="display:flex; gap:6px; align-items:center;">
-    <input id="bfs-start" placeholder="start" style="width:70px; padding:4px;">
-    <span>→</span>
-    <input id="bfs-end" placeholder="end" style="width:70px; padding:4px;">
-    <button id="bfs-run" style="padding:4px 8px;">Run</button>
+<!-- BFS Control Panel -->
+<div id="bfs-panel" style="
+  position: fixed;
+  top: 12px;
+  right: 500px;
+  z-index: 99999;
+  background: rgba(20,20,20,0.92);
+  color: #fff;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  font-size: 13px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.3);
+">
+  <div style="font-weight: 700; margin-bottom: 6px;">BFS Path</div>
+
+  <div style="display:flex; gap:6px; align-items:center; margin-bottom:8px;">
+    <input id="bfs-start" placeholder="start" style="width:70px; padding:5px 6px; border-radius:6px; border:1px solid #555; background:#111; color:#fff;">
+    <span style="opacity:0.8;">→</span>
+    <input id="bfs-end" placeholder="end" style="width:70px; padding:5px 6px; border-radius:6px; border:1px solid #555; background:#111; color:#fff;">
+    <button id="bfs-run" style="padding:6px 10px; border-radius:6px; border:1px solid #666; background:#2a2a2a; color:#fff; cursor:pointer;">
+      Run BFS
+    </button>
   </div>
-    </div>
+
+  <div style="display:flex; gap:6px;">
+    <button id="bfs-clear" style="padding:6px 10px; border-radius:6px; border:1px solid #666; background:#2a2a2a; color:#fff; cursor:pointer;">
+      Clear
+    </button>
+    <span id="bfs-status" style="align-self:center; opacity:0.8;"></span>
+  </div>
+</div>
 
     <div class="sidebar sidebar_hidden">
         <button class="button sidebarhandle" title="Toggle Sidebar" onclick="sidebar.onClick();">&lt;</button>
