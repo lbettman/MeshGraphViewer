@@ -96,6 +96,30 @@ def cmd_bfs(s, t):
         highlight_path(g, path)
     save_active(g)
 
+def cmd_remove(selected_nodes_csv: str, selected_links_csv: str = ""):
+    g = load_json(ACTIVE)
+
+    # Parse comma-separated node IDs like: "3,7,12"
+    s = selected_nodes_csv.strip().strip("'").strip('"')
+    node_ids = {x.strip() for x in s.split(",") if x.strip()}
+
+    if not node_ids:
+        return  # nothing selected
+
+    # Remove nodes
+    g["nodes"] = [n for n in g.get("nodes", []) if n.get("id") not in node_ids]
+
+    # Remove any links that touch removed nodes
+    g["links"] = [
+        e for e in g.get("links", [])
+        if e.get("source") not in node_ids and e.get("target") not in node_ids
+    ]
+
+    # Optional: clear highlights too (keeps things clean)
+    clear_colors(g)
+
+    save_active(g)
+
 def main(argv):
     if len(argv) < 2:
         print("Usage: mesh_demo.py small|large|clear|bfs <START> <END>", file=sys.stderr)
@@ -110,6 +134,11 @@ def main(argv):
         cmd_clear(); return 0
     if cmd == "bfs" and len(argv) >= 4:
         cmd_bfs(argv[2], argv[3]); return 0
+
+    if cmd == "remove" and len(argv) >= 3:
+        # argv[2] = selected_nodes (csv), argv[3] = selected_links (csv, optional)
+        cmd_remove(argv[2], argv[3] if len(argv) >= 4 else "")
+        return 0
 
     print("Usage: mesh_demo.py small|large|clear|bfs <START> <END>", file=sys.stderr)
     return 2

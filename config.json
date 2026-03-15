@@ -5,7 +5,7 @@
     {"name": "Remove", "command": "remove '%selected_nodes%' '%selected_links%'"},
     {"name": "New Node", "command": "add_node"},
     {"name": "Info", "command": "get_node_info '%selected_nodes%'"},
-    
+
     {"name": "Load Small Graph", "command": "small"},
     {"name": "Load Large Graph", "command": "large"},
     {"name": "Clear Highlight", "command": "clear"},
